@@ -33,19 +33,20 @@ type InitializeResponse struct {
 }
 
 type Chair struct {
-	ID          int64  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Description string `db:"description" json:"description"`
-	Thumbnail   string `db:"thumbnail" json:"thumbnail"`
-	Price       int64  `db:"price" json:"price"`
-	Height      int64  `db:"height" json:"height"`
-	Width       int64  `db:"width" json:"width"`
-	Depth       int64  `db:"depth" json:"depth"`
-	Color       string `db:"color" json:"color"`
-	Features    string `db:"features" json:"features"`
-	Kind        string `db:"kind" json:"kind"`
-	Popularity  int64  `db:"popularity" json:"-"`
-	Stock       int64  `db:"stock" json:"-"`
+	ID             int64  `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
+	Description    string `db:"description" json:"description"`
+	Thumbnail      string `db:"thumbnail" json:"thumbnail"`
+	Price          int64  `db:"price" json:"price"`
+	Height         int64  `db:"height" json:"height"`
+	Width          int64  `db:"width" json:"width"`
+	Depth          int64  `db:"depth" json:"depth"`
+	Color          string `db:"color" json:"color"`
+	Features       string `db:"features" json:"features"`
+	Kind           string `db:"kind" json:"kind"`
+	Popularity     int64  `db:"popularity" json:"-"`
+	Stock          int64  `db:"stock" json:"-"`
+	PopularityDesc int64  `db:"popularity_desc" json:"-"`
 }
 
 type ChairSearchResponse struct {
@@ -73,6 +74,7 @@ type Estate struct {
 	Popularity     int64   `db:"popularity" json:"-"`
 	DoorHeightType int64   `db:"door_height_type" json:"doorHeightType"`
 	DoorWidthType  int64   `db:"door_width_type" json:"doorWidthType"`
+	PopularityDesc int64   `db:"popularity_desc" json:"-"`
 }
 
 //EstateSearchResponse estate/searchへのレスポンスの形式
@@ -323,7 +325,7 @@ func getChairDetail(c echo.Context) error {
 	}
 
 	chair := Chair{}
-	query := `SELECT * FROM chair WHERE id = ?`
+	query := `SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock FROM chair WHERE id = ?`
 	err = db.Get(&chair, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -504,10 +506,10 @@ func searchChairs(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM chair WHERE "
+	searchQuery := "SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock FROM chair WHERE "
 	countQuery := "SELECT COUNT(*) FROM chair WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
+	limitOffset := " ORDER BY popularity_desc, id ASC LIMIT ? OFFSET ?"
 
 	var res ChairSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
@@ -559,7 +561,7 @@ func buyChair(c echo.Context) error {
 	defer tx.Rollback()
 
 	var chair Chair
-	err = tx.QueryRowx("SELECT * FROM chair WHERE id = ? AND stock > 0 FOR UPDATE", id).StructScan(&chair)
+	err = tx.QueryRowx("SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock FROM chair WHERE id = ? AND stock > 0 FOR UPDATE", id).StructScan(&chair)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Echo().Logger.Infof("buyChair chair id \"%v\" not found", id)
@@ -590,7 +592,7 @@ func getChairSearchCondition(c echo.Context) error {
 
 func getLowPricedChair(c echo.Context) error {
 	var chairs []Chair
-	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
+	query := `SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
 	err := db.Select(&chairs, query, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -775,7 +777,7 @@ func searchEstates(c echo.Context) error {
 	searchQuery := "SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate WHERE "
 	countQuery := "SELECT COUNT(*) FROM estate WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
-	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
+	limitOffset := " ORDER BY popularity_desc, id ASC LIMIT ? OFFSET ?"
 
 	var res EstateSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
@@ -824,7 +826,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	}
 
 	chair := Chair{}
-	query := `SELECT * FROM chair WHERE id = ?`
+	query := `SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock FROM chair WHERE id = ?`
 	err = db.Get(&chair, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -855,7 +857,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	query = `SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate
 		WHERE (door_width >= ? AND door_height >= ?)
 		OR (door_width >= ? AND door_height >= ?)
-		ORDER BY popularity DESC, id ASC LIMIT ?`
+		ORDER BY popularity_desc, id ASC LIMIT ?`
 	err = db.Select(&estates, query, chair_len_1, chair_len_2, chair_len_2, chair_len_1, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -882,7 +884,7 @@ func searchEstateNazotte(c echo.Context) error {
 
 	b := coordinates.getBoundingBox()
 	estatesInBoundingBox := []Estate{}
-	query := `SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC`
+	query := `SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity_desc, id ASC`
 	err = db.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity from estate where latitude ...", err)

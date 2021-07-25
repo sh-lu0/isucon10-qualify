@@ -27,10 +27,12 @@ CREATE TABLE isuumo.estate
         AS ((CASE WHEN (door_width < 80) THEN 1
         WHEN (door_width < 110) THEN 2
         WHEN (door_width < 150) THEN 3
-        ELSE 4 END)),
+        ELSE 4 END)) NOT NULL,
+    popularity_desc INTEGER AS (-popularity) NOT NULL,
     INDEX idx_id(id),
     INDEX idx_rent(rent),
     INDEX idx_popularity(popularity),
+    INDEX idx_popularity_desc_id(popularity_desc, id),
     INDEX idx_door_height_door_width(door_height, door_width),
     INDEX idx_latitude_longitude(latitude,longitude)
 );
@@ -50,6 +52,7 @@ CREATE TABLE isuumo.chair
     kind        VARCHAR(64)     NOT NULL,
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL,
+    popularity_desc INTEGER AS (-popularity) NOT NULL,
     INDEX idx_id(id),
     INDEX idx_popularity(popularity),
     INDEX idx_price_id(price, id)
