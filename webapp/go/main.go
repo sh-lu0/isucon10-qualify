@@ -836,11 +836,27 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	}
 
 	var estates []Estate
-	w := chair.Width
-	h := chair.Height
-	d := chair.Depth
-	query = `SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`
-	err = db.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
+	// イスのなかで短い辺2つ
+	var chair_len_1, chair_len_2, tmp_max_len int64
+	if chair.Width < chair.Height {
+		chair_len_1 = chair.Width
+		tmp_max_len = chair.Height
+	} else {
+		chair_len_1 = chair.Height
+		tmp_max_len = chair.Width
+	}
+
+	if chair.Depth < tmp_max_len {
+		chair_len_2 = chair.Depth
+	} else {
+		chair_len_2 = tmp_max_len
+	}
+
+	query = `SELECT id, thumbnail, name, description, latitude, longitude, address, rent, door_height, door_width, features, popularity FROM estate
+		WHERE (door_width >= ? AND door_height >= ?)
+		OR (door_width >= ? AND door_height >= ?)
+		ORDER BY popularity DESC, id ASC LIMIT ?`
+	err = db.Select(&estates, query, chair_len_1, chair_len_2, chair_len_2, chair_len_1, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
