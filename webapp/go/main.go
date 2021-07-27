@@ -75,6 +75,7 @@ type Estate struct {
 	DoorHeightType int64   `db:"door_height_type" json:"doorHeightType"`
 	DoorWidthType  int64   `db:"door_width_type" json:"doorWidthType"`
 	PopularityDesc int64   `db:"popularity_desc" json:"-"`
+	LocationPoint  string  `db:"location_point" json:"locationPoint"`
 }
 
 //EstateSearchResponse estate/searchへのレスポンスの形式

@@ -29,12 +29,14 @@ CREATE TABLE isuumo.estate
         WHEN (door_width < 150) THEN 3
         ELSE 4 END)) NOT NULL,
     popularity_desc INTEGER AS (-popularity) NOT NULL,
+    location_point POINT AS (POINT(latitude, longitude)) STORED NOT NULL,
     INDEX idx_id(id),
     INDEX idx_rent(rent),
     INDEX idx_popularity_desc_id(popularity_desc, id),
     INDEX idx_door_height_door_width(door_height, door_width),
     INDEX idx_rent_door_width(rent, door_width),
     INDEX idx_rent_door_height(rent, door_height),
+    SPATIAL KEY idx_location_point (location_point),
     INDEX idx_latitude_longitude(latitude,longitude)
 );
 
