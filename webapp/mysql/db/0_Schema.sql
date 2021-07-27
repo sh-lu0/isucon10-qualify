@@ -33,6 +33,8 @@ CREATE TABLE isuumo.estate
     INDEX idx_rent(rent),
     INDEX idx_popularity_desc_id(popularity_desc, id),
     INDEX idx_door_height_door_width(door_height, door_width),
+    INDEX idx_rent_door_width(rent, door_width),
+    INDEX idx_rent_door_height(rent, door_height),
     INDEX idx_latitude_longitude(latitude,longitude)
 );
 
