@@ -53,6 +53,7 @@ CREATE TABLE isuumo.chair
     stock       INTEGER         NOT NULL,
     popularity_desc INTEGER AS (-popularity) NOT NULL,
     INDEX idx_id(id),
+    INDEX idx_price_stock(price, stock),
     INDEX idx_popularity_desc_id(popularity_desc, id),
     INDEX idx_price_id(price, id)
 );
